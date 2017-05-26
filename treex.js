@@ -54,17 +54,18 @@
         async : function(value, key, async, description, parent, elements){
             var _this = this;
 
-            var result =  function(v){
-                value[key] = v;
-            };
-
-            result.next = function(){
+            var next = function(){
                 key++;
                 if (elements && key < elements.length){
                     value[key] = _this.make(_this.async(value, key, async, description, parent, elements), description, parent, elements[key]);
                 } else if (elements && key >= elements.length){
                     _this.warn('async loop finished');
                 }
+            };
+
+            var result =  function(v){
+                value[key] = v;
+                next();
             };
 
             return result;
@@ -139,7 +140,6 @@
     			}
     		}
             
-            if (typeof async.next == 'function') async.next();
     		return value;
     		
     	},
