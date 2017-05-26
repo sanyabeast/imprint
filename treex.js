@@ -17,35 +17,53 @@
 
     DOMJSON.prototype = {
     	format : function(value, format){
-    		format = format.split('>');
-    		var type = format[0];
-    		var action = format[1];
+    		if (typeof format == 'string'){
+                format = format.split('>');
+                var type = format[0];
+                var action = format[1];
 
-    		if (typeof value == type){
-    			switch(action){
-    				case 'rm-spaces':
-    					return value.replace(/^\s+|\s+$/g,'');
-    				break;
-                    case 'rm-html':
-                        return value.replace(/<\/?[^>]+(>|$)/g, "");
-                    break;
-    				case 'parse-number':
-    					return Number(value) || 0;
-    				break;
-    				default:
-    					return value;
-    				break;
-    			}
-    		}
+                if (typeof value == type){
+                    switch(action){
+                        case 'rm-spaces':
+                            return value.replace(/^\s+|\s+$/g,'');
+                        break;
+                        case 'rm-html':
+                            return value.replace(/<\/?[^>]+(>|$)/g, "");
+                        break;
+                        case 'parse-number':
+                            return Number(value) || 0;
+                        break;
+                        default:
+                            return value;
+                        break;
+                    }
+                }
+            } else if (typeof format == 'function'){
+                return format(value);
+            }
 
     		return value;
 
     	},
-        asmJSON : function(description, parent, el){
-            return JSON.stringify(this.asm(description, parent, el));
+        makeJSON : function(description, parent, el){
+            return JSON.stringify(this.make(description, parent, el));
         },
-    	asm : function(description, parent, el){
+        async : function(target, key){
+            return function(value){
+                target[key] = value;
+            }
+        },
+    	make : function(async, description, parent, el){
+            if (typeof async == 'object'){
+                el = parent;
+                parent = description;
+                description = async;
+                async = false;
+            }
+
     		parent = parent || window.document;
+
+            var resume = this.make.bind(this, description, parent, el);
 
     		var value;
 
@@ -61,7 +79,7 @@
 	    				value = [];
 
 	    				for (var a = 0, l = elements.length; a < l; a++){
-	    					value.push(this.asm(description, parent, elements[a]));
+	    					value.push(this.make(this.async(value, a), description, parent, elements[a]));
 	    				}
 	    			}
 
@@ -82,10 +100,17 @@
 	    				value = {};
 
 	    				for (var k in description.value){
-	    					value[k] = this.asm(description.value[k], el);
+	    					value[k] = this.make(this.async(value, k), description.value[k], el);
 	    				}
 	    			break;
+                    case 'callback':
+                        value = description.value(el);
+                    break;
                     default:
+                    case 'callback-async':
+                        description.value(el, async);
+                        value = null;
+                    break;
                         value = null;
                     break;
 	    		}
