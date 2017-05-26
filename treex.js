@@ -48,6 +48,9 @@
     				var elements = parent.querySelectorAll(description.selector);
 
     				if (elements.length == 0){
+
+                        console.log(description, parent, el);
+
     					value = null;
     				} else if ((elements.length == 1 && description.array !== true) || description.array === false){
 	    				el = elements[0];
@@ -69,6 +72,9 @@
 	    			case 'node-html':
 	    				value = el.innerHTML;
 	    			break;
+                    case 'node-attribute':
+                        value = el.getAttribute(description.value);
+                    break;
 	    			case 'branch':
 	    				value = {};
 
@@ -81,7 +87,11 @@
 
     		if (description.format){
     			for (var b = 0, l = description.format.length; b < l; b++){
-    				value = this.format(value, description.format[b]);
+    				if (typeof description.format[b] == 'function'){
+                        value = description.format[b](value);
+                    } else {
+                        value = this.format(value, description.format[b]);
+                    }
     			}
     		}
 
