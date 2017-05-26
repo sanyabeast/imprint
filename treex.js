@@ -4,7 +4,7 @@
 // @version      0.1
 // @description  try to take over the world!
 // @author       You
-// @match        https://vk.com/*
+// @match        https://*/*
 // @grant        none
 // ==/UserScript==
 
@@ -26,6 +26,9 @@
     				case 'rm-spaces':
     					return value.replace(/^\s+|\s+$/g,'');
     				break;
+                    case 'rm-html':
+                        return value.replace(/<\/?[^>]+(>|$)/g, "");
+                    break;
     				case 'parse-number':
     					return Number(value) || 0;
     				break;
@@ -38,6 +41,9 @@
     		return value;
 
     	},
+        asmJSON : function(description, parent, el){
+            return JSON.stringify(this.asm(description, parent, el));
+        },
     	asm : function(description, parent, el){
     		parent = parent || window.document;
 
@@ -48,9 +54,6 @@
     				var elements = parent.querySelectorAll(description.selector);
 
     				if (elements.length == 0){
-
-                        console.log(description, parent, el);
-
     					value = null;
     				} else if ((elements.length == 1 && description.array !== true) || description.array === false){
 	    				el = elements[0];
@@ -82,6 +85,9 @@
 	    					value[k] = this.asm(description.value[k], el);
 	    				}
 	    			break;
+                    default:
+                        value = null;
+                    break;
 	    		}
     		}
 
