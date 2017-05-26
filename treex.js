@@ -16,6 +16,9 @@
     };
 
     DOMJSON.prototype = {
+        warn : function(){
+            console.warn.apply(console, arguments);
+        },
     	format : function(value, format){
     		if (typeof format == 'string'){
                 format = format.split('>');
@@ -48,10 +51,24 @@
         makeJSON : function(description, parent, el){
             return JSON.stringify(this.make(description, parent, el));
         },
-        async : function(target, key){
-            return function(value){
-                target[key] = value;
-            }
+        async : function(value, key, async, description, parent, elements){
+            var _this = this;
+
+            var result =  function(v){
+                value[key] = v;
+            };
+
+            result.next = function(){
+                key++;
+                if (elements && key < elements.length){
+                    value[key] = _this.make(_this.async(value, key, async, description, parent, elements), description, parent, elements[key]);
+                } else if (elements && key >= elements.length){
+                    _this.warn('async loop finished');
+                }
+            };
+
+            return result;
+
         },
     	make : function(async, description, parent, el){
             if (typeof async == 'object'){
@@ -62,8 +79,6 @@
             }
 
     		parent = parent || window.document;
-
-            var resume = this.make.bind(this, description, parent, el);
 
     		var value;
 
@@ -78,9 +93,7 @@
 	    			} else {
 	    				value = [];
 
-	    				for (var a = 0, l = elements.length; a < l; a++){
-	    					value.push(this.make(this.async(value, a), description, parent, elements[a]));
-	    				}
+                        value[0] = this.make(this.async(value, 0, async, description, parent, elements), description, parent, elements[0])
 	    			}
 
     			} else {
@@ -109,7 +122,7 @@
                     default:
                     case 'callback-async':
                         description.value(el, async);
-                        value = null;
+                        return null;
                     break;
                         value = null;
                     break;
@@ -125,7 +138,8 @@
                     }
     			}
     		}
-
+            
+            if (typeof async.next == 'function') async.next();
     		return value;
     		
     	},
