@@ -19,10 +19,6 @@ imprint.make({
 			$ : 'h3.r > a',
 			type : 'text'
 		},
-		preview : {
-			$ : 'span.st',
-			type : 'text'
-		},
 		url : {
 			$ : 'h3.r > a',
 			type : 'attr',
