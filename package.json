@@ -1,0 +1,9 @@
+{
+	"name" : "dom-imprint",
+	"version" : "0.1.0-a",
+	"description" : "DOM parsing tool",
+	"author" : {
+		"name" : "Alex Gaivoronski",
+		"email" : "a.gvrnsk@gmail.com"
+	}
+}

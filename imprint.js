@@ -2,8 +2,8 @@
 // @name         DOMJSON
 // @namespace    http://tampermonkey.net/
 // @version      0.1
-// @description  try to take over the world!
-// @author       You
+// @description  parser
+// @author       Alex 
 // @match        https://*/*
 // @grant        none
 // ==/UserScript==
@@ -11,11 +11,31 @@
 (function() {
     // Your code here...
     'use strict';
-    var DOMJSON = function(){
+    var Imprint = function(){
     	console.log(document);
     };
 
-    DOMJSON.prototype = {
+    Imprint.prototype = {
+        helpers : {
+            onMutate : function(selector, callback, parent){
+                parent = parent || window.document;
+
+                var element = parent.querySelector(selector);
+                var config = { attributes: true, childList: true, characterData: true };
+
+                var observer = new MutationObserver(function(mutations) {
+                    for (var a = 0; a < mutations.length; a++){
+                        cb(callback, mutations[a]);
+                    }
+                });
+
+                function cb(callback, mutation){
+                    callback(observer, mutation, element, Imprint);
+                }
+
+                observer.observe(element, config);
+            }
+        },  
         warn : function(){
             console.warn.apply(console, arguments);
         },
@@ -54,19 +74,21 @@
         async : function(value, key, async, description, parent, elements){
             var _this = this;
 
-            var next = function(){
+            var next = function(isAsync){
                 key++;
                 if (elements && key < elements.length){
                     value[key] = _this.make(_this.async(value, key, async, description, parent, elements), description, parent, elements[key]);
-                } else if (elements && key >= elements.length){
+                } else if (isAsync && elements && key >= elements.length){
                     _this.warn('async loop finished');
                 }
             };
 
             var result =  function(v){
                 value[key] = v;
-                next();
+                next(true);
             };
+
+            result.next = next;
 
             return result;
 
@@ -107,8 +129,12 @@
 	    			case 'node-html':
 	    				value = el.innerHTML;
 	    			break;
-                    case 'node-attribute':
+                    case 'node-attr':
+                        console.log(el)
                         value = el.getAttribute(description.value);
+                    break;
+                    case 'node-text':
+                        value = el.textContent;
                     break;
 	    			case 'branch':
 	    				value = {};
@@ -122,7 +148,7 @@
                     break;
                     default:
                     case 'callback-async':
-                        description.value(el, async);
+                        description.value(el, async, this);
                         return null;
                     break;
                         value = null;
@@ -140,11 +166,87 @@
     			}
     		}
             
+            if (async.next) async.next();
     		return value;
     		
     	},
     };
 
-    window.domJSON = new DOMJSON();
+    window.Parser = new Imprint();
+
+
+    /*VK*/
+    // imprint = Imprint.make({
+    //     selector : '.photos_row > a',
+    //     type : 'callback-async',
+    //     value : function(el, async, Imprint){
+    //         var value;
+
+    //         Imprint.helpers.onMutate('#layer_wrap', function(observer, mutation, element, Imprint){
+
+    //             if (mutation.type == 'attributes' && mutation.attributeName == 'style'){                
+    //                 observer.disconnect();
+    //                 value = Imprint.make({
+    //                     type : 'branch',
+    //                     selector : 'body',
+    //                     value : {
+    //                         url : {
+    //                             selector : '#pv_photo > img',
+    //                             type : 'node-attribute',
+    //                             value : 'src'
+    //                         },
+    //                         source : {
+    //                             selector : '.group_link',
+    //                             type : 'node-html'
+    //                         },
+    //                         likes : {
+    //                             selector : '.pv_like_count',
+    //                             type : 'node-html',
+    //                             format : ['parse-number']
+    //                         }
+    //                     }
+    //                 });
+
+    //                 Photoview.hide(0);      
+
+    //                 setTimeout(function(){
+    //                     async(value);
+    //                 }, Math.random() * 2)
+
+    //             }
+    //         });
+
+    //         el.onclick.apply(el);
+    //     }
+    // })
+
+    /*GOOGLE MUISC*/
+   // var bla = Imprint.make({
+   //      selector : '.song-row',
+   //          type : 'branch',
+   //          value : {
+   //              artist : {
+   //                  selector : '[data-col="artist"] span',
+   //                  type : 'node-text'
+   //              },
+   //              title : {
+   //                  selector : '[data-col="title"] .column-content.tooltip',
+   //                  type : 'node-text'
+   //              },
+   //              duration : {
+   //                  selector : '[data-col="duration"] span',
+   //                  type : 'node-text'
+   //              },
+   //              album : {
+   //                  selector : '[data-col="album"] span',
+   //                  type : 'node-text'
+   //              },
+   //              rating : {
+   //                  selector : '[data-col="rating"]',
+   //                  type : 'node-attr',
+   //                  value : 'data-rating'
+   //              }
+   //          }
+   //      })
 
 })();
