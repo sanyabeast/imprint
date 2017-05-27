@@ -21,7 +21,7 @@
 }(window, function(){
     
     var Imprint = function(){
-        console.log(document);
+        console.warn('IMPRINT');
     };
 
     Imprint.prototype = {
@@ -49,29 +49,20 @@
             console.warn.apply(console, arguments);
         },
         format : function(value, format){
-            console.log(value, format);
-
             if (typeof format == 'string'){
-                format = format.split('>');
-                var type = format[0];
-                var action = format[1];
-
-                if (typeof value == type){
-                    switch(action){
-                        case 'rm-spaces':
-                            console.log('kek');
-                            return value.replace(/^\s+|\s+$/g,'');
-                        break;
-                        case 'rm-html':
-                            return value.replace(/<\/?[^>]+(>|$)/g, "");
-                        break;
-                        case 'parse-number':
-                            return Number(value) || 0;
-                        break;
-                        default:
-                            return value;
-                        break;
-                    }
+                switch(format){
+                    case 'rm-spaces':
+                        return value.replace(/^\s+|\s+$/g,'');
+                    break;
+                    case 'rm-html':
+                        return value.replace(/<\/?[^>]+(>|$)/g, "");
+                    break;
+                    case 'parse-number':
+                        return Number(value) || 0;
+                    break;
+                    default:
+                        return value;
+                    break;
                 }
             } else if (typeof format == 'function'){
                 return format(value);
