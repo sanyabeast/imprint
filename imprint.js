@@ -18,6 +18,29 @@
         window.Parcel = factory();
         window.parcel = new window.Parcel();
 
+        var decreaseDate = function(date){
+            var year = date.slice(0, 4);
+            var month = date.slice(4, 6);
+            var day = date.slice(6, 8);
+
+            var date = new Date();
+
+            date.setYear(year);
+            date.setMonth(month - 1);
+            date.setDate(day);
+
+            date-=(1000*60*60*24);
+            date = new Date(date);
+
+            var result = "";
+            result += (date.getFullYear()).toString();
+            result += ((date.getMonth() + 1).toString().length == 1 ? "0"+(date.getMonth() + 1).toString() : (date.getMonth() + 1).toString());
+            result += (date.getDate().toString().length == 1 ? "0"+date.getDate().toString() : date.getDate().toString());
+
+            return result;
+
+        };
+
         var goNextPage = function(){
             var href = window.location.href;
             href = href.replace("https://www.parimatch.com/res.html?", "");
@@ -32,12 +55,12 @@
 
             console.log(tokens.Date);
 
-            if (tokens.Date > 20179113){
+            if (tokens.Date > 20171101){
                 var url = "https://www.parimatch.com/res.html?";
 
                 for (var k in tokens){
                     if (k == "Date"){
-                        tokens[k]--;
+                        tokens[k] = decreaseDate(tokens[k]);
                         tokens[k] = tokens[k].toString();
                     }
 
@@ -51,7 +74,7 @@
                 console.log(url);
                 setTimeout(function(){
                     window.open(url, "_self");
-                }, 500 + Math.random() * 2000);
+                }, Math.random() * 1000);
 
             }
 
