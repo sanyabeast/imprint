@@ -15,16 +15,118 @@
     } else if (typeof module === 'object' && module.exports){
         module.exports = factory(!0);
     } else {
-        window.Imprint = factory();
-        window.imprint = new window.Imprint();
+        window.Parcel = factory();
+        window.parcel = new window.Parcel();
+
+        var goNextPage = function(){
+            var href = window.location.href;
+            href = href.replace("https://www.parimatch.com/res.html?", "");
+            href = href.split("&");
+
+            var tokens = {};
+
+            for (var a = 0, token; a < href.length; a++){
+                token = href[a].split("=");
+                tokens[token[0]] = token[1];
+            }
+
+            console.log(tokens.Date);
+
+            if (tokens.Date > 20179113){
+                var url = "https://www.parimatch.com/res.html?";
+
+                for (var k in tokens){
+                    if (k == "Date"){
+                        tokens[k]--;
+                        tokens[k] = tokens[k].toString();
+                    }
+
+                    if (!tokens[k] || !tokens[k].length){
+                        continue;
+                    }
+
+                    url += ["&", k, "=", tokens[k]].join("");
+                }
+
+                console.log(url);
+                setTimeout(function(){
+                    window.open(url, "_self");
+                }, 500 + Math.random() * 2000);
+
+            }
+
+        };
+
+        var onContentLoaded = function(){
+            var data = parcel.make({
+                $ : 'table.TT',
+                type : 'children',
+                value : {
+                    events : {
+                        type : "children",
+                        $  : "tbody",
+                        value : {
+                            date : {
+                                $ : ".Mono:first-child",
+                                type : "text"
+                            },
+                            team1 : {
+                                $ : ".Mono + .Names",
+                                type : "text"
+                            },
+                            team2 : {
+                                $ : ".Names + .Names",
+                                type : "text"
+                            },
+                            result : {
+                                $ : ".Mono:last-child",
+                                type : "text"
+                            }
+                        }
+                    },
+                }
+            });
+
+            window.parcel.extension.send(data);
+
+            goNextPage();
+
+        };
+
+        var checkDocumentState = function(){
+            console.log(document.readyState);
+            if (document.readyState == "complete"){
+                onContentLoaded();
+            } else {
+                setTimeout(checkDocumentState, 1000);
+            }
+        };
+
+        checkDocumentState();
+
     }
 }(window, function(){
     
-    var Imprint = function(){
+    var Parcel = function(){
         console.warn('IMPRINT');
+
+        if (window.chrome && window.chrome.runtime && window.chrome.runtime.onMessage){
+            window.chrome.runtime.onMessage.addListener(function (msg, sender) {
+                console.log(arguments)
+            });
+        }
+
     };
 
-    Imprint.prototype = {
+    Parcel.prototype = {
+        extension : {
+            send : function(data){
+                chrome.runtime.sendMessage({
+                    location: window.location.href,
+                    data : data
+                });
+            }
+        },
         helpers : {
             onMutate : function($, callback, parent){
                 parent = parent || window.document;
@@ -39,7 +141,7 @@
                 });
 
                 function cb(callback, mutation){
-                    callback(observer, mutation, element, Imprint);
+                    callback(observer, mutation, element, Parcel);
                 }
 
                 observer.observe(element, config);
@@ -175,6 +277,6 @@
         },
     };
 
-   return Imprint;
+    return Parcel;
 
 }));
