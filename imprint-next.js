@@ -32,12 +32,20 @@
 
             this.listeners = [];
             this.waitings = [];
+            this.promises = 0;
+
+            if (Notification.permission != "denied" && Notification.permission != "granted"){
+                Notification.requestPermission();
+            }
         };
 
         Imprint.prototype = {
+            notify : function(message){
+                return new Notification(message);
+            },
             clearWaitings : function(){
                 while(this.waitings.length > 0){
-                    clearTimeout(this.waitings.pop());
+                    clearTimeout(this.waitings.pop().split("#")[0]);
                 }
             },
             serviceStampProps : [
@@ -80,8 +88,27 @@
                     listen[mutationStamp] = _callbacks;
                 });
             },
+            trimWaiters : function(){
+                var waitings = [];
+                this.loop(this.waitings, (value)=>{
+                    var date = Number(value.split("#")[1]);
+                    if (date > +new Date()){
+                        waitings.push(value);
+                    }
+                });
+
+                this.waitings = waitings;
+            },
             wait : function(callback, timeout){
-                this.waitings.push(setTimeout(callback, timeout * 1000));
+                var tID;
+                var wID = this.waitings.length;
+
+                tID = setTimeout(()=>{
+                    this.trimWaiters();
+                    callback();
+                }, timeout * 1000);
+
+                this.waitings.push([tID, (+new Date() + (timeout * 1000))].join("#"));;
             },
             processMutation : function(mutationData){
                 if (typeof mutationData.length == "number"){
@@ -223,6 +250,7 @@
                     this.loop(source, (sourceItem, index) => {
                         var node = this.make(stamp, sourceItem);
                         if (node instanceof Promise){
+
                             let _index = index;
                             node.then((data)=>{
                                 outputData[_index] = data;
@@ -272,7 +300,9 @@
                     break;
                     case "async":
                         if (typeof stamp.$key == "function"){
+                            this.promises++;
                             sourceData = new Promise((resolve, reject)=>{
+                                this.promises--;
                                 stamp.$key.call(this, resolve, reject, stamp, source, stamp.$key);
                             });
                         }
@@ -296,8 +326,9 @@
                             if (node instanceof Promise){
                                 let _key = key;
                                 node.then((data)=>{
+
                                     outputData[_key] = data;
-                                })
+                                });
                             } else {
                                 outputData[key] = node;                            
                             }
